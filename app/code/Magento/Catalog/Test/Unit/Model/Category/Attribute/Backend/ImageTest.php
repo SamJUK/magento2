@@ -256,6 +256,65 @@ class ImageTest extends TestCase
         );
     }
 
+    /**
+     * Test beforeSaveAttributeFileNameOutsideOfCategoryDirCdnSubfolder.
+     */
+    public function testBeforeSaveAttributeFileNameOutsideOfCategoryDirCdnSubfolder()
+    {
+        $this->setupObjectManagerForCheckImageExist(false);
+
+        $this->attribute
+            ->expects($this->once())
+            ->method('getName')
+            ->willReturn('test_attribute');
+
+        $model = $this->setUpModelForTests();
+        $model->setAttribute($this->attribute);
+
+        $this->storeManagerInterfaceMock
+            ->expects($this->once())
+            ->method('getStore')
+            ->willReturn($this->storeMock);
+
+        $this->storeMock
+            ->expects($this->once())
+            ->method('getBaseMediaDir')
+            ->willReturn('media');
+
+        $this->storeMock
+            ->expects($this->once())
+            ->method('getBaseUrl')
+            ->willReturn('http://cdn.example.com/e1/media/');
+
+        $this->filesystem
+            ->expects($this->exactly(2))
+            ->method('getUri')
+            ->with(DirectoryList::MEDIA)
+            ->willReturn('media');
+
+        $object = new DataObject(
+            [
+                'test_attribute' => [
+                    [
+                        'name' => 'test123.jpg',
+                        'url' => 'http://cdn.example.com/e1/media/catalog/category/test123.jpg'
+                    ]
+                ]
+            ]
+        );
+
+        $model->beforeSave($object);
+
+        $this->assertEquals(
+            [
+                [
+                    'name' => '/media/catalog/category/test123.jpg',
+                    'url' => '/media/catalog/category/test123.jpg']
+            ],
+            $object->getData('_additional_data_test_attribute')
+        );
+    }
+
     private function setupObjectManagerForCheckImageExist($return)
     {
         $objectManagerMock = $this->getMockForAbstractClass(ObjectManagerInterface::class);

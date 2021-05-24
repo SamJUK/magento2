@@ -11,6 +11,7 @@ use Magento\Framework\App\ObjectManager;
 use Magento\Framework\File\Uploader;
 use Magento\Store\Api\Data\StoreInterface;
 use Magento\Store\Model\StoreManagerInterface;
+use Magento\Framework\UrlInterface;
 
 /**
  * Catalog category image attribute backend model
@@ -149,9 +150,21 @@ class Image extends \Magento\Eav\Model\Entity\Attribute\Backend\AbstractBackend
             }
         } elseif ($this->fileResidesOutsideCategoryDir($value)) {
             // use relative path for image attribute so we know it's outside of category dir when we fetch it
-            // phpcs:ignore Magento2.Functions.DiscouragedFunction
-            $value[0]['url'] = parse_url($value[0]['url'], PHP_URL_PATH);
-            $value[0]['name'] = $value[0]['url'];
+
+            /** @var StoreInterface $store */
+            $store = $this->storeManager->getStore();
+            if ($store) {
+                $mediaDir = $store->getBaseMediaDir();
+                $baseMediaUrl = $store->getBaseUrl(UrlInterface::URL_TYPE_MEDIA);
+                $baseMediaHost = str_replace("/{$mediaDir}/", '', $baseMediaUrl);
+                $path = str_replace($baseMediaHost, '', $value[0]['url']);
+            } else {
+                // phpcs:ignore Magento2.Functions.DiscouragedFunction
+                $path = parse_url($value[0]['url'], PHP_URL_PATH);
+            }
+
+            $value[0]['url'] = $path;
+            $value[0]['name'] = $path;
         }
 
         if ($imageName = $this->getUploadedImageName($value)) {
