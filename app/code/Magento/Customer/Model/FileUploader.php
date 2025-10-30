@@ -83,6 +83,12 @@ class FileUploader
      */
     public function validate()
     {
+        if (!in_array($this->attributeMetadata->getFrontendInput(), ['file', 'image'])) {
+            return [
+                __('"%1" is not a valid input to accept file uploads.', $this->attributeMetadata->getFrontendInput())
+            ];
+        }
+
         $formElement = $this->elementFactory->create(
             $this->attributeMetadata,
             null,
