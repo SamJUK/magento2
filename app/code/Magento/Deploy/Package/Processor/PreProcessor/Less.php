@@ -183,6 +183,9 @@ class Less implements ProcessorInterface
      */
     private function buildMap($filePath, $packagePath, $contentType)
     {
+        if (isset($this->map[$filePath])) {
+            return $this->map;
+        }
         $content = $this->deployStaticFile->readTmpFile($filePath, $packagePath);
         $replaceCallback = function ($matchedContent) use ($filePath, $packagePath, $contentType) {
             $matchedFileId = $matchedContent['path'] ?? '';
