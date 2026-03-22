@@ -66,6 +66,11 @@ class DeployPackage
     private $errorsCount = 0;
 
     /**
+     * How often to write progress info to disk (every N files)
+     */
+    private const INFO_WRITE_INTERVAL = 50;
+
+    /**
      * DeployPackage constructor
      *
      * @param AppState $appState
@@ -151,6 +156,8 @@ class DeployPackage
                 $this->errorsCount++;
             }
         }
+
+        $this->writeInfoFile($package);
 
         // execute package post-processors (may adjust content of deployed files, or produce derivative files)
         foreach ($package->getPostProcessors() as $processor) {
@@ -256,11 +263,9 @@ class DeployPackage
      */
     private function register(Package $package, ?PackageFile $file = null, $skipLogging = false)
     {
-        $info = [
-            'count' => $this->count,
-            'last' => $file ? $file->getSourcePath() : ''
-        ];
-        $this->deployStaticFile->writeTmpFile('info.json', $package->getPath(), json_encode($info));
+        if ($this->count === 0 || $this->count % self::INFO_WRITE_INTERVAL === 0) {
+            $this->writeInfoFile($package, $file);
+        }
 
         if (!$skipLogging) {
             $logMessage = '.';
@@ -282,5 +287,21 @@ class DeployPackage
 
             $this->logger->info($logMessage);
         }
+    }
+
+    /**
+     * Write progress tracking info file to tmp directory
+     *
+     * @param Package $package
+     * @param PackageFile|null $file
+     * @return void
+     */
+    private function writeInfoFile(Package $package, ?PackageFile $file = null): void
+    {
+        $info = [
+            'count' => $this->count,
+            'last' => $file ? $file->getSourcePath() : ''
+        ];
+        $this->deployStaticFile->writeTmpFile('info.json', $package->getPath(), json_encode($info));
     }
 }
