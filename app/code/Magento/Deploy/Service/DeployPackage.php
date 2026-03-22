@@ -217,7 +217,7 @@ class DeployPackage
                 || $file->getLocale() !== $package->getLocale()
             )
             && $file->getOrigPackage() === $parentPackage
-            && $this->deployStaticFile->readFile($file->getDeployedFileId(), $parentPackage->getPath());
+            && $this->deployStaticFile->fileExists($file->getDeployedFileId(), $parentPackage->getPath());
     }
 
     /**
