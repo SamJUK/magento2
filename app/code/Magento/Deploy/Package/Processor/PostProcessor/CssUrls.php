@@ -45,6 +45,20 @@ class CssUrls implements ProcessorInterface
     private $options = [];
 
     /**
+     * Index of deployedFileName => PackageFile for parent packages
+     *
+     * @var array
+     */
+    private $parentFileIndex = [];
+
+    /**
+     * Index of deployedFileName => true for the current package
+     *
+     * @var array
+     */
+    private $packageFileIndex = [];
+
+    /**
      * CssUrls constructor
      *
      * @param Filesystem $filesystem
@@ -65,6 +79,9 @@ class CssUrls implements ProcessorInterface
         if ($this->options[DeployStaticOptions::NO_CSS] === true) {
             return false;
         }
+
+        $this->buildFileIndexes($package);
+
         $urlMap = [];
         /** @var PackageFile $file */
         foreach (array_keys($package->getMap()) as $fileId) {
@@ -245,15 +262,7 @@ class CssUrls implements ProcessorInterface
      */
     private function getFileFromParent($fileName, Package $currentPackage)
     {
-        /** @var Package $package */
-        foreach (array_reverse($currentPackage->getParentPackages()) as $package) {
-            foreach ($package->getFiles() as $file) {
-                if ($file->getDeployedFileName() === $fileName) {
-                    return $file;
-                }
-            }
-        }
-        return null;
+        return $this->parentFileIndex[$fileName] ?? null;
     }
 
     /**
@@ -276,12 +285,27 @@ class CssUrls implements ProcessorInterface
      */
     private function isFileExistsInPackage($filePath, Package $package)
     {
-        /** @var PackageFile $file */
+        return isset($this->packageFileIndex[$filePath]);
+    }
+
+    /**
+     * Build hash indexes for file lookups within this package and its parents
+     *
+     * @param Package $package
+     * @return void
+     */
+    private function buildFileIndexes(Package $package): void
+    {
+        $this->packageFileIndex = [];
         foreach ($package->getFiles() as $file) {
-            if ($file->getDeployedFileName() === $filePath) {
-                return true;
+            $this->packageFileIndex[$file->getDeployedFileName()] = true;
+        }
+
+        $this->parentFileIndex = [];
+        foreach ($package->getParentPackages() as $parentPackage) {
+            foreach ($parentPackage->getFiles() as $file) {
+                $this->parentFileIndex[$file->getDeployedFileName()] = $file;
             }
         }
-        return false;
     }
 }
