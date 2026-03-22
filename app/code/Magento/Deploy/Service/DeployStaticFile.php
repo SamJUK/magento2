@@ -183,9 +183,10 @@ class DeployStaticFile
     public function copyFile(string $fileName, string $sourcePath, string $targetPath): bool
     {
         $fileName = $this->minification->addMinifiedSign($fileName);
+        $resolvedFileName = $this->resolveFile($fileName);
         return $this->pubStaticDir->copyFile(
-            $sourcePath . DIRECTORY_SEPARATOR . $this->resolveFile($fileName),
-            $targetPath . DIRECTORY_SEPARATOR . $this->resolveFile($fileName)
+            $sourcePath . DIRECTORY_SEPARATOR . $resolvedFileName,
+            $targetPath . DIRECTORY_SEPARATOR . $resolvedFileName
         );
     }
 
