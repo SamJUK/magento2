@@ -62,9 +62,14 @@ class PhpScanner implements ScannerInterface
         $parameters = $constructor->getParameters();
         /** @var $parameter \ReflectionParameter */
         foreach ($parameters as $parameter) {
-            preg_match('/\[\s\<\w+?>\s\??([\w\\\\]+)/s', $parameter->__toString(), $matches);
-            if (isset($matches[1]) && substr($matches[1], -strlen($entityType)) == $entityType) {
-                $missingClassName = $matches[1];
+            // Use getType() instead of getParameterClass(): the class may not exist yet
+            // (that's exactly why we're looking for it), so we only need the name string here.
+            $type = $parameter->getType();
+            if (!($type instanceof \ReflectionNamedType) || $type->isBuiltin()) {
+                continue;
+            }
+            $missingClassName = $type->getName();
+            if (substr($missingClassName, -strlen($entityType)) == $entityType) {
                 if ($this->shouldGenerateClass($missingClassName, $entityType, $file)) {
 
                     if (substr($missingClassName, -strlen($factorySuffix)) == $factorySuffix) {
